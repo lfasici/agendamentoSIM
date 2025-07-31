@@ -1,0 +1,456 @@
+# Prompt para IA do Replit - Sistema de Agendamento Interno Simplificado
+
+## INSTRUÇÃO PRINCIPAL PARA A IA DO REPLIT:
+
+Crie um **sistema básico de agendamento interno** para operações logísticas com foco em simplicidade e funcionalidade essencial:
+
+---
+
+## 🎯 **OBJETIVO DO APLICATIVO**
+Desenvolver uma aplicação web simples onde:
+1. **Operadores** criam horários disponíveis no calendário
+2. **Clientes internos** visualizam e agendam horários
+3. **Sistema automático** envia confirmações por email
+4. **Relatórios básicos** para controle operacional
+
+---
+
+## 🏗️ **ARQUITETURA TÉCNICA SIMPLIFICADA**
+
+### **Stack Recomendado:**
+- **Frontend:** React.js com Tailwind CSS
+- **Backend:** Node.js com Express
+- **Banco de Dados:** SQLite
+- **Email:** EmailJS (gratuito, sem servidor)
+- **Calendário:** React-Calendar
+
+### **Estrutura de Pastas:**
+```
+/
+├── client/ (React frontend)
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── App.js
+├── server/ (Node.js backend)
+│   ├── routes/
+│   ├── models/
+│   └── index.js
+├── database/
+└── README.md
+```
+
+---
+
+## 📊 **ESTRUTURA DO BANCO DE DADOS SIMPLIFICADA**
+
+### **Tabela: agendamentos**
+```sql
+CREATE TABLE agendamentos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data_hora DATETIME NOT NULL,
+    servico VARCHAR(100) NOT NULL,
+    nome_cliente VARCHAR(200) NOT NULL,
+    email_cliente VARCHAR(200) NOT NULL,
+    telefone_cliente VARCHAR(20),
+    empresa_cliente VARCHAR(200),
+    observacoes TEXT,
+    status VARCHAR(50) DEFAULT 'confirmado',
+    codigo_confirmacao VARCHAR(10) UNIQUE,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### **Tabela: horarios_disponiveis**
+```sql
+CREATE TABLE horarios_disponiveis (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data_hora DATETIME NOT NULL,
+    servico VARCHAR(100) NOT NULL,
+    disponivel BOOLEAN DEFAULT 1,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### **Dados Iniciais (Seeds):**
+```sql
+-- Tipos de serviço
+INSERT INTO horarios_disponiveis (data_hora, servico, disponivel) VALUES
+('2024-12-15 08:00:00', 'Carregamento', 1),
+('2024-12-15 10:00:00', 'Descarregamento', 1),
+('2024-12-15 14:00:00', 'Carregamento', 1),
+('2024-12-15 16:00:00', 'Descarregamento', 1);
+```
+
+---
+
+## 🎨 **DESIGN SIMPLES E LIMPO**
+
+### **Paleta de Cores Básica:**
+```css
+:root {
+  --primary: #3B82F6;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --gray: #6B7280;
+  --light-gray: #F3F4F6;
+  --white: #FFFFFF;
+}
+```
+
+### **Componentes Essenciais:**
+
+#### **1. Header Simples**
+- Título: "Sistema de Agendamento"
+- Navegação: Home | Admin | Relatórios
+
+#### **2. Calendário Principal**
+- Vista mensal
+- Horários livres em azul
+- Horários ocupados em cinza
+- Click para agendar
+
+#### **3. Modal de Agendamento**
+- Dados do cliente
+- Tipo de serviço
+- Observações
+- Botão confirmar
+
+---
+
+## 🔧 **FUNCIONALIDADES ESSENCIAIS**
+
+### **Página Principal (Cliente):**
+1. **Calendário visual** com horários disponíveis
+2. **Modal de agendamento** ao clicar em horário livre
+3. **Formulário simples:** Nome, Email, Telefone, Empresa, Observações
+4. **Confirmação automática** com código único
+5. **Lista de agendamentos** do cliente (busca por email)
+
+### **Página Admin:**
+1. **Criar horários** disponíveis (data, hora, tipo serviço)
+2. **Visualizar todos** os agendamentos
+3. **Cancelar/editar** agendamentos
+4. **Adicionar horários** em lote (semana completa)
+
+### **Página Relatórios:**
+1. **Agendamentos por período** (hoje, semana, mês)
+2. **Agendamentos por serviço** (carregamento vs descarregamento)
+3. **Lista completa** com filtros básicos
+4. **Exportar para CSV** (opcional)
+
+---
+
+## 📧 **SISTEMA DE E-MAILS BÁSICO**
+
+### **Configuração EmailJS:**
+```javascript
+// No frontend - sem servidor de email
+emailjs.init("SUA_PUBLIC_KEY");
+
+const enviarConfirmacao = (dadosAgendamento) => {
+  emailjs.send(
+    'service_id',
+    'template_id',
+    {
+      to_email: dadosAgendamento.email,
+      cliente_nome: dadosAgendamento.nome,
+      data_hora: dadosAgendamento.dataHora,
+      servico: dadosAgendamento.servico,
+      codigo: dadosAgendamento.codigo
+    }
+  );
+};
+```
+
+### **Template de Email Simples:**
+```
+Assunto: Agendamento Confirmado - Código: [CODIGO]
+
+Olá [NOME],
+
+Seu agendamento foi confirmado:
+
+📅 Data/Hora: [DATA_HORA]
+🚛 Serviço: [SERVICO]
+🏢 Empresa: [EMPRESA]
+🔢 Código: [CODIGO]
+
+Observações: [OBSERVACOES]
+
+Para alterações, entre em contato.
+
+Atenciosamente,
+Equipe Logística
+```
+
+---
+
+## 💻 **PÁGINAS E COMPONENTES**
+
+### **1. App.js (Roteamento):**
+```jsx
+import { Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import Admin from './pages/Admin';
+import Relatorios from './pages/Relatorios';
+
+function App() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/relatorios" element={<Relatorios />} />
+      </Routes>
+    </div>
+  );
+}
+```
+
+### **2. Home.js (Agendamento):**
+```jsx
+- Calendário React-Calendar
+- Lista de horários do dia selecionado
+- Modal para dados do cliente
+- Confirmação de agendamento
+```
+
+### **3. Admin.js (Gestão):**
+```jsx
+- Formulário criar horários
+- Lista de todos agendamentos
+- Ações: editar, cancelar
+- Criação em lote
+```
+
+### **4. Relatorios.js (Relatórios):**
+```jsx
+- Filtros por data
+- Cards com totais
+- Tabela de agendamentos
+- Botão exportar
+```
+
+---
+
+## 🗄️ **API ENDPOINTS BÁSICAS**
+
+### **Backend Routes:**
+```javascript
+// GET /api/horarios-disponiveis
+// POST /api/horarios-disponiveis
+// GET /api/agendamentos
+// POST /api/agendamentos
+// PUT /api/agendamentos/:id
+// DELETE /api/agendamentos/:id
+// GET /api/relatorios/periodo/:inicio/:fim
+```
+
+### **Exemplo de Endpoint:**
+```javascript
+// POST /api/agendamentos
+app.post('/api/agendamentos', async (req, res) => {
+  const { dataHora, servico, nome, email, telefone, empresa, observacoes } = req.body;
+  
+  // Gerar código único
+  const codigo = Math.random().toString(36).substr(2, 8).toUpperCase();
+  
+  // Salvar no banco
+  const agendamento = await db.run(`
+    INSERT INTO agendamentos 
+    (data_hora, servico, nome_cliente, email_cliente, telefone_cliente, empresa_cliente, observacoes, codigo_confirmacao)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `, [dataHora, servico, nome, email, telefone, empresa, observacoes, codigo]);
+  
+  // Marcar horário como ocupado
+  await db.run(`
+    UPDATE horarios_disponiveis 
+    SET disponivel = 0 
+    WHERE data_hora = ? AND servico = ?
+  `, [dataHora, servico]);
+  
+  res.json({ success: true, codigo });
+});
+```
+
+---
+
+## 📊 **RELATÓRIOS BÁSICOS**
+
+### **Cards de Resumo:**
+```jsx
+<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+  <Card titulo="Hoje" valor={agendamentosHoje} />
+  <Card titulo="Esta Semana" valor={agendamentosSemana} />
+  <Card titulo="Carregamentos" valor={totalCarregamentos} />
+  <Card titulo="Descarregamentos" valor={totalDescarregamentos} />
+</div>
+```
+
+### **Tabela de Agendamentos:**
+```jsx
+<table className="w-full">
+  <thead>
+    <tr>
+      <th>Código</th>
+      <th>Data/Hora</th>
+      <th>Cliente</th>
+      <th>Serviço</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {agendamentos.map(item => (
+      <tr key={item.id}>
+        <td>{item.codigo_confirmacao}</td>
+        <td>{formatarDataHora(item.data_hora)}</td>
+        <td>{item.nome_cliente}</td>
+        <td>{item.servico}</td>
+        <td><Badge status={item.status} /></td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+```
+
+---
+
+## 📦 **DEPENDÊNCIAS MÍNIMAS**
+
+### **Frontend (package.json):**
+```json
+{
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.8.0",
+    "react-calendar": "^4.0.0",
+    "axios": "^1.3.0",
+    "tailwindcss": "^3.2.0",
+    "emailjs-com": "^3.2.0",
+    "date-fns": "^2.29.0"
+  }
+}
+```
+
+### **Backend (package.json):**
+```json
+{
+  "dependencies": {
+    "express": "^4.18.0",
+    "sqlite3": "^5.1.0",
+    "cors": "^2.8.0"
+  }
+}
+```
+
+---
+
+## 🚀 **FLUXOS SIMPLIFICADOS**
+
+### **Fluxo do Cliente:**
+```
+1. Acessa sistema
+2. Vê calendário com horários livres
+3. Clica em horário desejado
+4. Preenche: Nome, Email, Telefone, Empresa
+5. Confirma agendamento
+6. Recebe código e email automático
+```
+
+### **Fluxo do Admin:**
+```
+1. Acessa /admin
+2. Cria horários disponíveis
+3. Visualiza todos agendamentos
+4. Pode cancelar/editar se necessário
+5. Acessa relatórios básicos
+```
+
+---
+
+## ⚙️ **CONFIGURAÇÕES REPLIT**
+
+### **replit.nix:**
+```nix
+{ pkgs }: {
+  deps = [
+    pkgs.nodejs-18_x
+    pkgs.sqlite
+  ];
+}
+```
+
+### **.replit:**
+```toml
+run = "npm run dev"
+modules = ["nodejs-18"]
+
+[deployment]
+run = ["npm start"]
+```
+
+### **Scripts package.json:**
+```json
+{
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && node index.js",
+    "client": "cd client && npm start",
+    "start": "cd server && node index.js"
+  }
+}
+```
+
+---
+
+## 📋 **CHECKLIST DE FUNCIONALIDADES**
+
+### **✅ Essenciais:**
+- [ ] Calendário visual com horários
+- [ ] Agendamento simples (nome, email, telefone)
+- [ ] Códigos únicos de confirmação
+- [ ] Email automático de confirmação
+- [ ] Admin: criar/visualizar/cancelar
+- [ ] Relatórios básicos por período
+- [ ] Interface responsiva
+
+### **🔧 Técnicas:**
+- [ ] Banco SQLite funcional
+- [ ] API REST básica
+- [ ] Validações de formulário
+- [ ] Tratamento de erros
+- [ ] Deploy no Replit
+
+---
+
+## 💡 **RESULTADO ESPERADO**
+
+Ao final você terá:
+
+✅ **Sistema funcional** e simples  
+✅ **Agendamento em 3 cliques**  
+✅ **Emails automáticos** de confirmação  
+✅ **Admin básico** para gestão  
+✅ **Relatórios essenciais**  
+✅ **Código limpo** e organizado  
+✅ **Deploy pronto** no Replit  
+
+**Tempo de desenvolvimento: 1-2 horas**
+
+---
+
+## 🎯 **INSTRUÇÕES FINAIS PARA A IA**
+
+1. **Mantenha MUITO simples** - foque no essencial
+2. **Sem login complexo** - admin sem autenticação
+3. **EmailJS no frontend** - sem servidor de email
+4. **SQLite local** - sem configurações complexas
+5. **Interface limpa** - Tailwind básico
+6. **Poucos componentes** - máximo de 5-6 arquivos
+7. **Dados de exemplo** inclusos para testar
+
+**Cole este prompt na IA do Replit para criar o sistema simplificado!**
